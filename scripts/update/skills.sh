@@ -8,7 +8,7 @@
 source "$(cd "$(dirname "$0")/.." && pwd)/lib.sh"
 
 GENERATED=".generated"
-MAX_LINES=200
+MAX_LINES="${MONO_DOC_MAX_LINES:-200}"   # 0: no limit
 DONT="Don't"
 CHECK=0
 while [[ $# -gt 0 ]]; do
@@ -145,7 +145,7 @@ check() {
   while IFS= read -r f; do
     [[ -n $f ]] || continue
     n=$(wc -l <"$f" | tr -d ' ')
-    if [[ $n -gt $MAX_LINES ]]; then echo "$(rel "$f"): $n lines (max $MAX_LINES)" >&2; errors=$((errors + 1)); fi
+    if [[ $MAX_LINES -gt 0 && $n -gt $MAX_LINES ]]; then echo "$(rel "$f"): $n lines (max $MAX_LINES)" >&2; errors=$((errors + 1)); fi
     for key in name description; do
       [[ -n $(fm_get "$f" "$key") ]] || { echo "$(rel "$f"): front matter needs $key" >&2; errors=$((errors + 1)); }
     done
