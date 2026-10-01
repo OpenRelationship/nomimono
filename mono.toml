@@ -1,7 +1,7 @@
 # nomimono manifest. This repo consumes itself; path is the checkout.
 
 [nomimono]
-version = "0.4.3"
+version = "0.5.0"
 mode = "self"
 repo = "https://github.com/OpenRelationship/nomimono"
 
