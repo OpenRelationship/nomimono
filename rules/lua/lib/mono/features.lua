@@ -83,7 +83,7 @@ if os.getenv("MONO_REPORT_OUT") then
 end
 if os.getenv("MONO_TRACE_OUT") then
   local f = assert(io.open(os.getenv("MONO_TRACE_OUT"), "w"))
-  f:write(telemetry.otlp(R.spans, { service = os.getenv("MONO_SERVICE") or "monomono" }))
+  f:write(telemetry.otlp(R.spans, { service = os.getenv("MONO_SERVICE") or "nomimono" }))
   f:close()
 end
 if os.getenv("MONO_TRACE") then io.stderr:write(telemetry.render(R.spans)) end

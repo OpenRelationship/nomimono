@@ -89,7 +89,7 @@ Feature: ${title}
 GH
   cat >"$dest/BUCK" <<BUCK
 # Feature tests. Each red test is a target; \`just test //context/...\` locks the spec.
-load("@monomono//rules:defs.bzl", "mono_feature_tests")
+load("@nomimono//rules:defs.bzl", "mono_feature_tests")
 
 mono_feature_tests(
     name = "${slug}",

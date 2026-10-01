@@ -1,38 +1,39 @@
-# monomono
+# 🍶 nomimono
 
-A domain-agnostic monorepo contract, delivered as a versioned package. Consumers attach this repo at `packages/monomono`, import `mono.just`, and get a `just` door, a buck2 build graph, an `AGENTS.md` contract, and a spec-first lifecycle, with no opinion about languages, vendors, or domains.
+A domain-agnostic monorepo contract, delivered as a versioned package. Consumers attach this repo at `packages/nomimono`, import `mono.just`, and get a `just` door, a buck2 build graph, an `AGENTS.md` contract, and a spec-first lifecycle, with no opinion about languages, vendors, or domains.
 
-This file is the contract for working on monomono itself. `template/.agents/AGENTS.md` is the contract consumers get.
+This file is the contract for working on nomimono itself (called monomono before 0.5.0). `template/.agents/AGENTS.md` is the contract consumers get.
 
 ## Rules
 
 - Presuppose nothing a consumer did not ask for. No language, vendor, cloud, framework, or domain name may appear in `template/`, `scripts/`, or `rules/` as a default. Toolchains are fragments the consumer adds; ecosystems are adapters the consumer picks.
 - `template/` is the product. Files there are copied once by `mono init`, never overwritten. If a change needs to reach existing consumers, it is a migration in `migrations/<version>.sh`, not a template edit.
 - `scripts/` is the package's behavior. Bash and awk only, `set -euo pipefail`, sourced `scripts/lib.sh`. No interpreter beyond a POSIX shell host is required; buck2's own `python_bootstrap` toolchain is the prelude's, not ours. Every script has a `just` route in `mono.just`.
-- `rules/` is the `@monomono//` buck2 cell. `rules/defs.bzl` is macros over the bundled prelude. `rules/lua/` is the one set of real rules, because the prelude has no Lua and the graph for scripts is the point of the package. Add another rule family only when the prelude cannot express it.
+- `rules/` is the `@nomimono//` buck2 cell. `rules/defs.bzl` is macros over the bundled prelude. `rules/lua/` is the one set of real rules, because the prelude has no Lua and the graph for scripts is the point of the package. Add another rule family only when the prelude cannot express it.
 - `rules/lua` attribute names are frozen under `RULES_API`; a change bumps it and ships a migration. Every rule script and everything under `rules/lua/lib/mono` must run on Lua 5.1, 5.3, 5.4 and LuaJIT: `read("*a")`, `(table.unpack or unpack)`, `(loadstring or load)`, no `goto`, no `//`, no `utf8`. The self-test runs the whole tree under each.
-- Telemetry vocabulary is closed and domain-free: `gen_ai.*` (OpenTelemetry) is adopted, `monomono.*` is ours, nothing else is named in the package. A consumer supplies its collector's names through a profile (`MONO_TELEMETRY_PROFILE`, `telemetry.vocabulary`); the self-test proves a profile with a third party's names, the package never mentions them.
+- Telemetry vocabulary is closed and domain-free: `gen_ai.*` (OpenTelemetry) is adopted, `nomimono.*` is ours, nothing else is named in the package. A consumer supplies its collector's names through a profile (`MONO_TELEMETRY_PROFILE`, `telemetry.vocabulary`); the self-test proves a profile with a third party's names, the package never mentions them.
 - Never edit `rules/lua/*.lua` with perl: `@word` and `$"` are interpolated. Use sed or a heredoc.
 - `toolchains/*.BUCK` are fragments. Each names a prelude system toolchain with the name the prelude expects.
 - `adapters/*.sh` implement `ensure|add|update|sync` for one ecosystem, with `PKG_DIR` set. They shell out to that ecosystem's own client.
 - Versions are semver tags `vX.Y.Z` matching `VERSION`. A breaking change to a consumer-owned file ships with a migration.
 - This repo is its own first consumer for `just`: root `justfile` imports `mono.just` and `mono.toml` says `mode = "self"`. It is not a buck2 project root, because a nested cell may not carry its own `[cells]`; `just selftest` scaffolds a throwaway consumer and runs its `just check` instead.
-- Only prose: `AGENTS.md`, `README.md`, and `LICENSE`. Usage is `just --list` and script headers.
+- Only prose: `AGENTS.md`, `README.md`, `LICENSE`, and `skills/nomimono/SKILL.md` (the agent skill, kept accurate to the recipes it describes). Usage is `just --list` and script headers.
 
 ## Folders
 
 | Path | Owns |
 | --- | --- |
 | `install.sh` | Machine install: just, buck2, and the bootstrap under `~/.local/bin`. Standalone. |
-| `bin/monomono` | Bootstrap. Attaches the package to a repo at `packages/monomono` and scaffolds it. Standalone. |
+| `bin/nomimono` | Bootstrap. Attaches the package to a repo at `packages/nomimono` and scaffolds it. Standalone. |
 | `mono.just` | Recipes every consumer imports. |
 | `scripts/` | Behavior behind those recipes. `lib.sh`, `build/`, `tools/`, `update/`. |
-| `rules/` | Starlark macros, the `@monomono//` cell. |
+| `rules/` | Starlark macros, the `@nomimono//` cell. |
 | `toolchains/` | Toolchain fragments (`<name>.BUCK`). |
 | `adapters/` | Package-ecosystem adapters. |
 | `template/` | The consumer skeleton. |
 | `migrations/` | `<version>.sh` scripts run in order on `just mono update`. |
-| `test/` | `init.sh` scaffolds two throwaway consumers and proves every feature: sh and Lua tests, bundles, hosts (C, Rust, wasm), lint/format/meta/typecheck, Gherkin + trace, coverage, hooks, 5.1/5.3/LuaJIT, lua-host/lua-config, provider refusal. `MONO_SELFTEST_SKIP` narrows it. |
+| `test/` | `init.sh` scaffolds two throwaway consumers and proves every feature: sh and Lua tests, bundles, hosts (C, Rust, wasm), lint/format/meta/typecheck, Gherkin + trace, coverage, hooks, 5.1/5.3/LuaJIT, lua-host/lua-config, provider refusal, and the 0.5.0 rename run by a real 0.4.3 updater. `MONO_SELFTEST_SKIP` narrows it. |
+| `skills/nomimono/SKILL.md` | The agent skill: how to work in a nomimono repo. Install it with a symlink from `~/.claude/skills/nomimono`. |
 | `.github/workflows/selftest.yml` | CI: the self-test on ubuntu and macOS, on push, tags and pull requests. |
 
 ## Release

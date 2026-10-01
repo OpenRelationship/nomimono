@@ -1,7 +1,7 @@
 # Declared toolchains. Nothing is assumed: add one with `just toolchain add <name>`.
 # genrule + python_bootstrap let genrule run; test + remote_test_execution let *_test rules run. That is all.
 #
-# Contract: each declared toolchain sits under a `# monomono:toolchain <name>` line, <name> being the fragment
+# Contract: each declared toolchain sits under a `# nomimono:toolchain <name>` line, <name> being the fragment
 # (just toolchain available). `just toolchain add` writes the line; a BUCK written by hand or by an app must
 # write it too. The scripts read this file through those lines, never the Starlark: `just toolchain list`,
 # doctor's make/cc check for a hermetic interpreter, and which interpreter runs .lua hooks, scripts and the
@@ -12,19 +12,19 @@ load("@prelude//toolchains:genrule.bzl", "system_genrule_toolchain")
 load("@prelude//toolchains:python.bzl", "system_python_bootstrap_toolchain")
 load("@prelude//toolchains:remote_test_execution.bzl", "remote_test_execution_toolchain")
 
-# monomono:toolchain genrule
+# nomimono:toolchain genrule
 system_genrule_toolchain(
     name = "genrule",
     visibility = ["PUBLIC"],
 )
 
-# monomono:toolchain python-bootstrap
+# nomimono:toolchain python-bootstrap
 system_python_bootstrap_toolchain(
     name = "python_bootstrap",
     visibility = ["PUBLIC"],
 )
 
-# monomono:toolchain test
+# nomimono:toolchain test
 noop_test_toolchain(
     name = "test",
     visibility = ["PUBLIC"],

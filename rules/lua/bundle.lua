@@ -57,7 +57,7 @@ local function level_for(s)
 end
 
 local o = assert(io.open(out, "wb"))
-o:write("-- bundled by monomono lua_bundle; do not edit\n")
+o:write("-- bundled by nomimono lua_bundle; do not edit\n")
 for i = 4, #arg do
   local name, path = arg[i]:match("^([^=]*)=(.*)$")
   if name and name ~= "" then

@@ -46,7 +46,7 @@ Areas, public repos, hosts
 
 Lua
 
-  lua_library / lua_test / lua_binary / lua_bundle in BUCK files (@monomono//rules/lua:defs.bzl)
+  lua_library / lua_test / lua_binary / lua_bundle in BUCK files (@nomimono//rules/lua:defs.bzl)
   just context feature test <p> <s> --steps     # bind bdd/*.feature in test/steps.lua -> <s>-gherkin target
   just lua repl | cover | profile | meta | fmt   # dev loop over the graph
   just lua trace | observe <feature target>     # span tree + OTLP trace.json; trace read back as Gherkin
@@ -57,7 +57,7 @@ Lua
 The package
 
   just mono status
-  just mono update [vX.Y.Z]      # bump packages/monomono, run migrations, sync
+  just mono update [vX.Y.Z]      # bump packages/nomimono, run migrations, sync
 TXT
 }
 

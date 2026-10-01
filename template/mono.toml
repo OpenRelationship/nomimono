@@ -1,10 +1,10 @@
-# monomono manifest. `just mono update` rewrites [monomono]; the rest is yours.
+# nomimono manifest. `just mono update` rewrites [nomimono]; the rest is yours.
 
-[monomono]
+[nomimono]
 version = "0.0.0"
 mode = "submodule"
-path = "packages/monomono"
-repo = "https://github.com/shinyobjectz/monomono"
+path = "packages/nomimono"
+repo = "https://github.com/OpenRelationship/nomimono"
 
 [repo]
 name = "__NAME__"

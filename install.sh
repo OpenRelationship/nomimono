@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
-# Machine install. One curl delivers everything a monomono repo needs on a host:
-#   just, buck2, and the `monomono` bootstrap command, all under ~/.local/bin.
+# Machine install. One curl delivers everything a nomimono repo needs on a host:
+#   just, buck2, and the `nomimono` bootstrap command, all under ~/.local/bin.
 #
-#   curl -fsSL https://raw.githubusercontent.com/shinyobjectz/monomono/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/OpenRelationship/nomimono/main/install.sh | bash
 #
-# Env: MONO_BIN_DIR (default ~/.local/bin), MONOMONO_HOME (default ~/.monomono), BUCK2_RELEASE (default latest).
+# Env: MONO_BIN_DIR (default ~/.local/bin), NOMIMONO_HOME (default ~/.nomimono), BUCK2_RELEASE (default latest).
 # Re-running upgrades the bootstrap checkout and buck2. It never touches a repo.
 
 set -euo pipefail
 
-REPO="${MONO_REPO_URL:-https://github.com/shinyobjectz/monomono}"
+REPO="${MONO_REPO_URL:-https://github.com/OpenRelationship/nomimono}"
 BIN="${MONO_BIN_DIR:-$HOME/.local/bin}"
-HOME_DIR="${MONOMONO_HOME:-$HOME/.monomono}"
+HOME_DIR="${NOMIMONO_HOME:-$HOME/.nomimono}"
 mkdir -p "$BIN"
 
-say() { echo "monomono: $*"; }
-need() { command -v "$1" >/dev/null 2>&1 || { echo "monomono: $1 is required ($2)" >&2; exit 1; }; }
+say() { echo "nomimono: $*"; }
+need() { command -v "$1" >/dev/null 2>&1 || { echo "nomimono: $1 is required ($2)" >&2; exit 1; }; }
 need git "https://git-scm.com"
 need curl "any package manager"
 
@@ -30,8 +30,8 @@ else
   git -c protocol.file.allow=always clone -q "$REPO" "$HOME_DIR"
   say "cloned $REPO to $HOME_DIR"
 fi
-ln -sfn "$HOME_DIR/bin/monomono" "$BIN/monomono"
-say "linked $BIN/monomono"
+ln -sfn "$HOME_DIR/bin/nomimono" "$BIN/nomimono"
+say "linked $BIN/nomimono"
 
 # 2. just
 if command -v just >/dev/null 2>&1; then
@@ -45,7 +45,7 @@ fi
 if command -v buck2 >/dev/null 2>&1 && [[ -z ${BUCK2_RELEASE:-} ]]; then
   say "buck2 $(buck2 --version | awk '{print $2}') present"
 else
-  MONO_BIN_DIR="$BIN" bash "$HOME_DIR/scripts/tools/install-buck2.sh" | tail -n 1 | sed 's/^/monomono: /'
+  MONO_BIN_DIR="$BIN" bash "$HOME_DIR/scripts/tools/install-buck2.sh" | tail -n 1 | sed 's/^/nomimono: /'
 fi
 
 # 4. optional: sqlite3 for the context junk drawer
@@ -57,4 +57,4 @@ case ":$PATH:" in
 esac
 echo
 say "ready. start a repo with:"
-echo "    mkdir myrepo && cd myrepo && git init && monomono init && just setup && just check"
+echo "    mkdir myrepo && cd myrepo && git init && nomimono init && just setup && just check"

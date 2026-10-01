@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# Bootstrap. Attaches monomono to a repo as packages/monomono and scaffolds the skeleton.
+# Bootstrap. Attaches nomimono to a repo as packages/nomimono and scaffolds the skeleton.
 #
-#   curl -fsSL https://raw.githubusercontent.com/shinyobjectz/monomono/main/bin/monomono | bash -s -- init
-#   monomono init [dir] [--ref v0.1.0] [--repo <url>] [--vendor] [--name <repo-name>] [--provider <app>] [--no-context]
-#   monomono version                 # bootstrap version
-#   monomono upgrade                 # update the bootstrap checkout and buck2
-#   monomono doctor                  # host tools present?
+#   curl -fsSL https://raw.githubusercontent.com/OpenRelationship/nomimono/main/bin/nomimono | bash -s -- init
+#   nomimono init [dir] [--ref v0.1.0] [--repo <url>] [--vendor] [--name <repo-name>] [--provider <app>] [--no-context]
+#   nomimono version                 # bootstrap version
+#   nomimono upgrade                 # update the bootstrap checkout and buck2
+#   nomimono doctor                  # host tools present?
 #
 # After init, everything else is `just`. This file has no dependency on the rest of the package
 # so it can run before the package is present.
 
 set -euo pipefail
 
-REPO="${MONO_REPO_URL:-https://github.com/shinyobjectz/monomono}"
+REPO="${MONO_REPO_URL:-https://github.com/OpenRelationship/nomimono}"
 REF=""
 MODE="submodule"
 NAME=""
@@ -52,29 +52,29 @@ cmd_init() {
     echo "initialized git repo at $TARGET"
   fi
 
-  if [[ -f $TARGET/packages/monomono/VERSION ]]; then
-    echo "packages/monomono already present ($(cat "$TARGET/packages/monomono/VERSION")); running scaffold only"
+  if [[ -f $TARGET/packages/nomimono/VERSION ]]; then
+    echo "packages/nomimono already present ($(cat "$TARGET/packages/nomimono/VERSION")); running scaffold only"
   else
     [[ -n $REF ]] || REF=$(latest_tag "$REPO")
     [[ -n $REF ]] || REF="main"
     mkdir -p "$TARGET/packages"
     case "$MODE" in
       submodule)
-        git -C "$TARGET" -c protocol.file.allow=always submodule add --name monomono "$REPO" packages/monomono
-        git -C "$TARGET/packages/monomono" fetch -q --tags origin
-        git -C "$TARGET/packages/monomono" checkout -q "$REF"
+        git -C "$TARGET" -c protocol.file.allow=always submodule add --name nomimono "$REPO" packages/nomimono
+        git -C "$TARGET/packages/nomimono" fetch -q --tags origin
+        git -C "$TARGET/packages/nomimono" checkout -q "$REF"
         ;;
       vendor)
-        git -c protocol.file.allow=always clone -q "$REPO" "$TARGET/packages/monomono"
-        git -C "$TARGET/packages/monomono" checkout -q "$REF"
-        rm -rf "$TARGET/packages/monomono/.git"
+        git -c protocol.file.allow=always clone -q "$REPO" "$TARGET/packages/nomimono"
+        git -C "$TARGET/packages/nomimono" checkout -q "$REF"
+        rm -rf "$TARGET/packages/nomimono/.git"
         ;;
     esac
-    echo "attached monomono $REF as packages/monomono ($MODE)"
+    echo "attached nomimono $REF as packages/nomimono ($MODE)"
   fi
 
-  MONO_HOME="$TARGET/packages/monomono" MONO_ROOT="$TARGET" \
-    "$TARGET/packages/monomono/scripts/tools/mono.sh" init --mode "$MODE" --repo "$REPO" ${NAME:+--name "$NAME"} ${EXTRA[@]+"${EXTRA[@]}"}
+  MONO_HOME="$TARGET/packages/nomimono" MONO_ROOT="$TARGET" \
+    "$TARGET/packages/nomimono/scripts/tools/mono.sh" init --mode "$MODE" --repo "$REPO" ${NAME:+--name "$NAME"} ${EXTRA[@]+"${EXTRA[@]}"}
 }
 
 case "${1:-}" in
@@ -84,7 +84,7 @@ case "${1:-}" in
     [[ -f $here/VERSION ]] && cat "$here/VERSION" || echo "remote"
     ;;
   upgrade)
-    curl -fsSL "${MONO_REPO_URL:-https://github.com/shinyobjectz/monomono}/raw/main/install.sh" | bash
+    curl -fsSL "${MONO_REPO_URL:-https://github.com/OpenRelationship/nomimono}/raw/main/install.sh" | bash
     ;;
   doctor)
     for t in git just buck2 sqlite3; do

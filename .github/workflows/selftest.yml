@@ -18,10 +18,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # tags too: the rename test runs the v0.4.3 updater
       - uses: extractions/setup-just@v2
       - uses: dtolnay/rust-toolchain@stable
       - uses: oven-sh/setup-bun@v2
-      - name: buck2 + monomono bootstrap
+      - name: buck2 + nomimono bootstrap
         run: |
           ./install.sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
@@ -31,5 +33,5 @@ jobs:
       - name: lua-language-server
         if: runner.os == 'macOS'
         run: brew install lua-language-server
-      - run: git config --global user.email ci@monomono && git config --global user.name ci
+      - run: git config --global user.email ci@nomimono && git config --global user.name ci
       - run: just selftest

@@ -23,5 +23,5 @@ function lfs.dir(path)
   return function() i = i + 1; return names[i] end
 end
 function lfs.mkdir(path) return os.execute("mkdir -p " .. q(path)) end
-function lfs.chdir() return nil, "chdir is not supported by the monomono lfs shim" end
+function lfs.chdir() return nil, "chdir is not supported by the nomimono lfs shim" end
 return lfs

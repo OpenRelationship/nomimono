@@ -1,10 +1,10 @@
-# __NAME__ — enter the repo through just. Package recipes come from packages/monomono; add yours below.
+# __NAME__ — enter the repo through just. Package recipes come from packages/nomimono; add yours below.
 # Recipe bodies call scripts/build, scripts/tools, or scripts/update. A script is <name>.sh or <name>.lua. No logic here.
 
 set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 set allow-duplicate-recipes   # your recipe below wins over the package's of the same name
 
-import 'packages/monomono/mono.just'
+import 'packages/nomimono/mono.just'
 
 # scripts/build/<target>.{sh,lua} (for steps buck2 cannot own yet)
 [positional-arguments]

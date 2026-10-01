@@ -1,4 +1,4 @@
-# monomono — this repo is its own first consumer. Package recipes come from mono.just.
+# nomimono — this repo is its own first consumer. Package recipes come from mono.just.
 
 set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 

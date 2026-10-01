@@ -1,4 +1,4 @@
-# Lua rules for the monomono cell: helper scripts run under the toolchain interpreter, and the mono stdlib.
+# Lua rules for the nomimono cell: helper scripts run under the toolchain interpreter, and the mono stdlib.
 export_file(name = "bundle.lua", visibility = ["PUBLIC"])
 export_file(name = "embed.lua", visibility = ["PUBLIC"])
 export_file(name = "check.lua", visibility = ["PUBLIC"])

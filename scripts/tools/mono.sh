@@ -8,9 +8,9 @@ usage() {
 usage:
   just mono status              # version pinned, version installed, mode, modules
   just mono version             # installed package version
-  just mono update [ref]        # submodule mode: move packages/monomono to <ref> (default: latest tag), migrate, sync
+  just mono update [ref]        # submodule mode: move packages/nomimono to <ref> (default: latest tag), migrate, sync
                                 #   vendor mode refuses (never fetches): replace the copy yourself, then just mono migrate; just mono sync
-  just mono migrate             # run migrations from mono.toml version to packages/monomono/VERSION
+  just mono migrate             # run migrations from mono.toml version to packages/nomimono/VERSION
   just mono sync                # relink hosts, regenerate skills, copy ci, add new template files
   just mono diff                # template files the repo does not have yet
 USAGE
@@ -48,16 +48,16 @@ cmd_init() {
   [[ -n $name ]] || name=$(basename "$MONO_ROOT")
   name=$(kebab "$name")
   scaffold "$name"
-  toml_set monomono version "$MONO_VERSION"
-  toml_set monomono mode "$mode"
-  toml_set monomono path "$(rel "$MONO_HOME")"
-  toml_set monomono repo "$repo"
-  [[ -z $provider ]] || toml_set monomono provider "$provider"
+  toml_set nomimono version "$MONO_VERSION"
+  toml_set nomimono mode "$mode"
+  toml_set nomimono path "$(rel "$MONO_HOME")"
+  toml_set nomimono repo "$repo"
+  [[ -z $provider ]] || toml_set nomimono provider "$provider"
   [[ $context == true ]] || toml_set modules context "$context"
   toml_set repo name "$name"
   cmd_sync
   echo
-  echo "monomono $MONO_VERSION is attached. Next:"
+  echo "nomimono $MONO_VERSION is attached. Next:"
   echo "  just setup      # buck2, hosts, stores"
   echo "  just doctor"
   echo "  just check"
@@ -65,13 +65,13 @@ cmd_init() {
 
 cmd_status() {
   local pinned mode
-  pinned=$(toml_get monomono version || true)
-  mode=$(toml_get monomono mode || true)
+  pinned=$(toml_get nomimono version || true)
+  mode=$(toml_get nomimono mode || true)
   echo "package     $(rel "$MONO_HOME")"
   echo "installed   $MONO_VERSION"
   echo "manifest    ${pinned:-none}"
   echo "mode        ${mode:-unknown}"
-  local provider; provider=$(toml_get monomono provider || true)
+  local provider; provider=$(toml_get nomimono provider || true)
   [[ -z $provider ]] || echo "provider    $provider"
   echo "repo        $(mono_repo_name)"
   if [[ -d $MONO_HOME/.git || -f $MONO_HOME/.git ]]; then
@@ -81,7 +81,7 @@ cmd_status() {
   awk '/^\[modules\]/ { on = 1; next } /^\[/ { on = 0 } on && NF { print "  " $0 }' "$MONO_MANIFEST" 2>/dev/null || true
   if [[ -n $pinned && $pinned != "$MONO_VERSION" ]]; then
     echo
-    echo "manifest says $pinned but packages/monomono is $MONO_VERSION; run just mono migrate"
+    echo "manifest says $pinned but packages/nomimono is $MONO_VERSION; run just mono migrate"
   fi
 }
 
@@ -92,7 +92,7 @@ run_migrations() {
     ver=$(basename "$file" .sh)
     if version_lt "$from" "$ver" && ! version_lt "$to" "$ver"; then
       echo "migrate $ver"
-      MONO_FROM="$from" MONO_TO="$to" bash "$file"
+      MONO_FROM="$from" MONO_TO="$to" MONO_SECTION=nomimono bash "$file"
       ran=$((ran + 1))
     fi
   done
@@ -101,22 +101,22 @@ run_migrations() {
 
 cmd_migrate() {
   local from
-  from=$(toml_get monomono version || true)
+  from=$(toml_get nomimono version || true)
   [[ -n $from ]] || from="0.0.0"
   run_migrations "$from" "$MONO_VERSION"
-  toml_set monomono version "$MONO_VERSION"
+  toml_set nomimono version "$MONO_VERSION"
 }
 
 cmd_update() {
   local ref=${1-} mode from repo provider
-  provider=$(toml_get monomono provider || true)
+  provider=$(toml_get nomimono provider || true)
   if [[ -n $provider ]]; then
-    die "monomono is provided by $provider; update the app, not the package"
+    die "nomimono is provided by $provider; update the app, not the package"
   fi
-  mode=$(toml_get monomono mode || true)
-  repo=$(toml_get monomono repo || true)
+  mode=$(toml_get nomimono mode || true)
+  repo=$(toml_get nomimono repo || true)
   [[ -n $repo ]] || repo=$MONO_REPO_URL
-  from=$(toml_get monomono version || true)
+  from=$(toml_get nomimono version || true)
   [[ -n $from ]] || from="0.0.0"
   case "${mode:-submodule}" in
     submodule)
@@ -127,26 +127,26 @@ cmd_update() {
       ;;
     vendor)
       # a vendored copy is replaced by whoever put it there; this never fetches (no git ls-remote, no clone)
-      die "monomono is vendored (mode = \"vendor\" in mono.toml); replace $(rel "$MONO_HOME") with the release you want, then run just mono migrate and just mono sync"
+      die "nomimono is vendored (mode = \"vendor\" in mono.toml); replace $(rel "$MONO_HOME") with the release you want, then run just mono migrate and just mono sync"
       ;;
     *) die "unknown mode in mono.toml: $mode" ;;
   esac
   MONO_VERSION=$(tr -d '[:space:]' <"$MONO_HOME/VERSION")
-  echo "monomono $from -> $MONO_VERSION ($ref)"
+  echo "nomimono $from -> $MONO_VERSION ($ref)"
   run_migrations "$from" "$MONO_VERSION"
   # a migration may relocate the package; follow mono.toml
   local newpath
-  newpath=$(toml_get monomono path || true)
+  newpath=$(toml_get nomimono path || true)
   if [[ -n $newpath && -f $MONO_ROOT/$newpath/VERSION ]]; then
     MONO_HOME="$MONO_ROOT/$newpath"
     export MONO_HOME
   fi
-  toml_set monomono version "$MONO_VERSION"
+  toml_set nomimono version "$MONO_VERSION"
   scaffold "$(mono_repo_name)"
   cmd_sync
   if in_git_repo; then
-    git -C "$MONO_ROOT" add mono.toml packages/monomono 2>/dev/null || true
-    echo "staged mono.toml and packages/monomono; commit when ready"
+    git -C "$MONO_ROOT" add mono.toml "$(rel "$MONO_HOME")" 2>/dev/null || true
+    echo "staged mono.toml and $(rel "$MONO_HOME"); commit when ready"
   fi
 }
 

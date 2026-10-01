@@ -18,7 +18,7 @@ USAGE
 
 cmd_list() {
   [[ -f $TARGET ]] || die "missing toolchains/BUCK"
-  grep -E '^# monomono:toolchain ' "$TARGET" | awk '{print $3}'
+  grep -E '^# nomimono:toolchain ' "$TARGET" | awk '{print $3}'
   echo "--"
   grep -E '^\s*name\s*=' "$TARGET" | sed -E 's/.*name\s*=\s*"([^"]+)".*/toolchains\/\/:\1/'
 }
@@ -36,7 +36,7 @@ cmd_add() {
   local frag="$FRAGMENTS/$name.BUCK"
   [[ -f $frag ]] || die "no fragment named $name (just toolchain available)"
   [[ -f $TARGET ]] || die "missing toolchains/BUCK"
-  if grep -q "^# monomono:toolchain $name\$" "$TARGET"; then
+  if grep -q "^# nomimono:toolchain $name\$" "$TARGET"; then
     echo "toolchain $name already declared"
     return 0
   fi
@@ -51,7 +51,7 @@ cmd_add() {
   {
     grep -vE '^load\(' "$TARGET"
     echo
-    echo "# monomono:toolchain $name"
+    echo "# nomimono:toolchain $name"
     printf '%s\n' "$body"
   } >>"$tmp"
   mv "$tmp" "$TARGET"

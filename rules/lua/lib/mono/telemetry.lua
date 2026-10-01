@@ -2,13 +2,13 @@
 ---
 --- A span is { id, parent, name, at, ms, ok, attrs }. `attrs` never carries a payload:
 --- every key is in the vocabulary or `close_span` refuses it. The vocabulary is small by
---- default (OpenTelemetry GenAI names plus monomono's own) and a consumer extends or renames
+--- default (OpenTelemetry GenAI names plus nomimono's own) and a consumer extends or renames
 --- it with `vocabulary(profile)`, so an app's collector sees its own names, not this package's.
 ---
 --- A profile is { adopted = {names...}, minted = {name = rule...}, names = {feature=, scenario=,
 --- step=, outcome=, undefined=, unclosed=, run=, kind=, keyword=, scenarios=, steps=, passed=, failed=},
 --- events = function(event) -> name, attrs, ok }. Every key the runner writes is in `names`, so a
---- profile that renames them all leaves no monomono.* key in the trace; a partial `names` keeps
+--- profile that renames them all leaves no nomimono.* key in the trace; a partial `names` keeps
 --- the defaults for the rest. A renamed attribute must also be minted, or the recorder refuses it.
 --- The feature runner loads MONO_TELEMETRY_PROFILE (a module name) before any span opens; a steps
 --- file may call vocabulary() itself. This module opens no socket and requires nothing.
@@ -26,24 +26,24 @@ T.ADOPTED = {
 
 --- What a build graph and a feature runner say about themselves.
 T.MINTED = {
-  ["monomono.keyword"]   = { "given", "when", "then" },
-  ["monomono.scenarios"] = "number",
-  ["monomono.steps"]     = "number",
-  ["monomono.passed"]    = "number",
-  ["monomono.failed"]    = "number",
-  ["monomono.undefined"] = "number",
-  ["monomono.outcome"]   = { "passed", "failed", "undefined", "broken", "skipped" },
-  ["monomono.unclosed"]  = "boolean",
-  ["monomono.kind"]      = "string",
+  ["nomimono.keyword"]   = { "given", "when", "then" },
+  ["nomimono.scenarios"] = "number",
+  ["nomimono.steps"]     = "number",
+  ["nomimono.passed"]    = "number",
+  ["nomimono.failed"]    = "number",
+  ["nomimono.undefined"] = "number",
+  ["nomimono.outcome"]   = { "passed", "failed", "undefined", "broken", "skipped" },
+  ["nomimono.unclosed"]  = "boolean",
+  ["nomimono.kind"]      = "string",
 }
 
 --- Span and attribute names the runner uses; a profile renames them (a scenario may be an app's join span).
 --- The runner writes no attribute key that is not listed here.
 T.names = {
-  feature = "monomono.feature", scenario = "monomono.scenario", step = "monomono.step",
-  outcome = "monomono.outcome", undefined = "monomono.undefined", unclosed = "monomono.unclosed",
-  run = "monomono.run", kind = "monomono.kind", keyword = "monomono.keyword",
-  scenarios = "monomono.scenarios", steps = "monomono.steps", passed = "monomono.passed", failed = "monomono.failed",
+  feature = "nomimono.feature", scenario = "nomimono.scenario", step = "nomimono.step",
+  outcome = "nomimono.outcome", undefined = "nomimono.undefined", unclosed = "nomimono.unclosed",
+  run = "nomimono.run", kind = "nomimono.kind", keyword = "nomimono.keyword",
+  scenarios = "nomimono.scenarios", steps = "nomimono.steps", passed = "nomimono.passed", failed = "nomimono.failed",
 }
 
 T.events = nil   -- a profile's mapping from an app's flat run events to spans
@@ -154,8 +154,8 @@ function T.otlp(spans, ids)
   ids = ids or {}
   local trace_id = ids.trace or string.rep("0", 32)
   local span_id = ids.span or function(id) return string.format("%016x", tonumber(id) or 0) end
-  local service = ids.service or "monomono"
-  local scope = ids.scope or "monomono"
+  local service = ids.service or "nomimono"
+  local scope = ids.scope or "nomimono"
   local out = {}
   for i = 1, #spans do
     local s = spans[i]

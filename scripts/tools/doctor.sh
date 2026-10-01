@@ -20,14 +20,14 @@ need() {
 # just is the door for people; every script here runs without it (an app may drive the scripts directly)
 if command -v just >/dev/null 2>&1; then pass "just $(just --version 2>/dev/null | head -n 1 | cut -c1-40)"; else note "just not on PATH (optional: the scripts run without it; people run recipes through it)"; fi
 need buck2 "just setup installs it"
-mode=$(toml_get monomono mode || true)
+mode=$(toml_get nomimono mode || true)
 if [[ $mode == submodule || -z $mode ]]; then need git; elif command -v git >/dev/null 2>&1; then pass "git $(git --version | cut -c1-40)"; else note "git not installed (optional: the package is ${mode})"; fi
-if [[ -f $MONO_TOOLCHAINS/BUCK ]] && grep -qE "^# monomono:toolchain (lua|lua-5\.[13]|luajit)$" "$MONO_TOOLCHAINS/BUCK"; then
+if [[ -f $MONO_TOOLCHAINS/BUCK ]] && grep -qE "^# nomimono:toolchain (lua|lua-5\.[13]|luajit)$" "$MONO_TOOLCHAINS/BUCK"; then
   for t in make cc; do command -v $t >/dev/null 2>&1 && pass "$t (hermetic lua toolchain)" || bad "missing $t; the hermetic lua toolchain builds from source (or use lua-config / lua-host)"; done
 fi
 # the marker line is how the scripts read toolchains/BUCK (lib.sh lua_bin / lua_run); a hand-written file must carry it
-if [[ -f $MONO_TOOLCHAINS/BUCK ]] && grep -qE '^\s*name\s*=\s*"lua"' "$MONO_TOOLCHAINS/BUCK" && ! grep -qE '^# monomono:toolchain (lua|lua-5\.[13]|luajit|lua-system|lua-config|lua-host)$' "$MONO_TOOLCHAINS/BUCK"; then
-  note 'toolchains//:lua is declared without a "# monomono:toolchain <name>" line above it; hooks and scripts fall through to [lua] bin'
+if [[ -f $MONO_TOOLCHAINS/BUCK ]] && grep -qE '^\s*name\s*=\s*"lua"' "$MONO_TOOLCHAINS/BUCK" && ! grep -qE '^# nomimono:toolchain (lua|lua-5\.[13]|luajit|lua-system|lua-config|lua-host)$' "$MONO_TOOLCHAINS/BUCK"; then
+  note 'toolchains//:lua is declared without a "# nomimono:toolchain <name>" line above it; hooks and scripts fall through to [lua] bin'
 fi
 
 if mono_module context; then
@@ -35,46 +35,46 @@ if mono_module context; then
 fi
 
 if [[ -f $MONO_MANIFEST ]]; then
-  pinned=$(toml_get monomono version || true)
+  pinned=$(toml_get nomimono version || true)
   if [[ $pinned == "$MONO_VERSION" ]]; then
-    pass "mono.toml $pinned matches packages/monomono"
+    pass "mono.toml $pinned matches packages/nomimono"
   else
-    bad "mono.toml says ${pinned:-none}, packages/monomono is $MONO_VERSION; just mono migrate"
+    bad "mono.toml says ${pinned:-none}, packages/nomimono is $MONO_VERSION; just mono migrate"
   fi
 else
-  bad "mono.toml missing; run packages/monomono/bin/monomono init"
+  bad "mono.toml missing; run packages/nomimono/bin/nomimono init"
 fi
 
 if [[ $MONO_HOME != "$MONO_ROOT" ]]; then
-  provider=$(toml_get monomono provider || true)
+  provider=$(toml_get nomimono provider || true)
   by=${provider:+ by $provider}
-  if [[ $(toml_get monomono mode) == vendor ]]; then
-    pass "packages/monomono is vendored$by"
-  elif [[ -f $MONO_ROOT/.gitmodules ]] && grep -q 'path = packages/monomono' "$MONO_ROOT/.gitmodules"; then
-    pass "packages/monomono is a submodule ($(git -C "$MONO_HOME" describe --tags --always 2>/dev/null))$by"
+  if [[ $(toml_get nomimono mode) == vendor ]]; then
+    pass "packages/nomimono is vendored$by"
+  elif [[ -f $MONO_ROOT/.gitmodules ]] && grep -q 'path = packages/nomimono' "$MONO_ROOT/.gitmodules"; then
+    pass "packages/nomimono is a submodule ($(git -C "$MONO_HOME" describe --tags --always 2>/dev/null))$by"
   else
-    note "packages/monomono is neither a submodule nor marked vendor in mono.toml$by"
+    note "packages/nomimono is neither a submodule nor marked vendor in mono.toml$by"
   fi
   [[ -z $provider ]] || pass "provided by $provider; just mono update refuses, the app owns upgrades"
 fi
 
-if [[ $(toml_get monomono mode) == self ]]; then
+if [[ $(toml_get nomimono mode) == self ]]; then
   pass "package self-mode; buck2 project checks skipped"
 else
   for f in .buckroot .buckconfig BUCK toolchains/BUCK; do
     [[ -e $MONO_ROOT/$f ]] && pass "$f" || bad "$f missing; just mono sync"
   done
-  if [[ -f $MONO_ROOT/.buckconfig ]] && grep -qE '^\s*monomono\s*=' "$MONO_ROOT/.buckconfig"; then
-    pass ".buckconfig declares the monomono cell"
+  if [[ -f $MONO_ROOT/.buckconfig ]] && grep -qE '^\s*nomimono\s*=' "$MONO_ROOT/.buckconfig"; then
+    pass ".buckconfig declares the nomimono cell"
   else
-    note ".buckconfig has no monomono cell; @monomono// rules unavailable"
+    note ".buckconfig has no nomimono cell; @nomimono// rules unavailable"
   fi
 fi
 
 if [[ -f $MONO_ROOT/justfile ]] && grep -qE "^import .*mono\.just" "$MONO_ROOT/justfile"; then
   pass "justfile imports mono.just"
 else
-  bad "justfile must import the package recipes (import 'packages/monomono/mono.just')"
+  bad "justfile must import the package recipes (import 'packages/nomimono/mono.just')"
 fi
 
 if [[ -L $MONO_ROOT/AGENTS.md && $(readlink "$MONO_ROOT/AGENTS.md") == .agents/AGENTS.md ]]; then
@@ -115,7 +115,7 @@ if [[ -d $MONO_PACKAGES ]]; then
   for eco in "$MONO_PACKAGES"/*/; do
     [[ -d $eco ]] || continue
     name=$(basename "$eco")
-    [[ $name != monomono ]] || continue
+    [[ $name != nomimono ]] || continue
     if [[ -f $eco/.eco || -x $eco/adapter.sh ]]; then
       pass "packages/$name adapter $(cat "$eco/.eco" 2>/dev/null || echo local)"
     else

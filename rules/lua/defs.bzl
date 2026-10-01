@@ -1,6 +1,6 @@
 """Lua targets. Every .lua file gets a place in the graph.
 
-load("@monomono//rules/lua:defs.bzl", "lua_library", "lua_binary", "lua_test", "lua_tests", "lua_repl",
+load("@nomimono//rules/lua:defs.bzl", "lua_library", "lua_binary", "lua_test", "lua_tests", "lua_repl",
      "lua_bundle", "lua_embed", "lua_wasm", "lua_meta", "lua_lint", "lua_format", "lua_feature_test")
 
 lua_library        modules on LUA_PATH (+ cpath dirs on LUA_CPATH, + resources); compile-checked on every build
@@ -18,7 +18,7 @@ lua_format         stylua --check over sources, as a test; [fix] sub-target rewr
 lua_feature_test   Gherkin scenarios run against a steps file, emitting a span tree in the consumer's vocabulary (MONO_TELEMETRY_PROFILE)
 """
 
-load("@monomono//rules/lua:toolchain.bzl", "LuaToolInfo", "LuaToolchainInfo")
+load("@nomimono//rules/lua:toolchain.bzl", "LuaToolInfo", "LuaToolchainInfo")
 
 # Attribute names and meanings are frozen under this number; a change ships with a migration and a bump.
 RULES_API = 1
@@ -34,7 +34,7 @@ LuaLibraryInfo = provider(fields = {
 })
 
 _TOOLCHAIN = attrs.toolchain_dep(default = "toolchains//:lua", providers = [LuaToolchainInfo])
-_STDLIB = attrs.dep(default = "monomono//rules/lua:lib")
+_STDLIB = attrs.dep(default = "nomimono//rules/lua:lib")
 _DEPS = attrs.list(attrs.dep(providers = [LuaLibraryInfo]), default = [])
 _TC_OVERRIDE = attrs.option(attrs.toolchain_dep(providers = [LuaToolchainInfo]), default = None, doc = "run this target under another lua_toolchain (e.g. toolchains//:luajit) instead of toolchains//:lua")
 
@@ -220,8 +220,8 @@ lua_library = rule(
         "toolchain": _TC_OVERRIDE,
         "_lua_toolchain": _TOOLCHAIN,
         "_stdlib": _STDLIB,
-        "_checker": attrs.source(default = "monomono//rules/lua:check.lua"),
-        "_meta": attrs.source(default = "monomono//rules/lua:meta.lua"),
+        "_checker": attrs.source(default = "nomimono//rules/lua:check.lua"),
+        "_meta": attrs.source(default = "nomimono//rules/lua:meta.lua"),
     },
 )
 
@@ -318,7 +318,7 @@ lua_bundle = rule(
         "out": attrs.option(attrs.string(), default = None),
         "bytecode": attrs.bool(default = False),
         "dialect": attrs.option(attrs.enum(["5.1", "5.3", "5.4", "jit", "portable"]), default = None, doc = "default: the toolchain's; portable = 5.1 ∩ 5.4"),
-        "_bundler": attrs.source(default = "monomono//rules/lua:bundle.lua"),
+        "_bundler": attrs.source(default = "nomimono//rules/lua:bundle.lua"),
         "toolchain": _TC_OVERRIDE,
         "_lua_toolchain": _TOOLCHAIN,
     },
@@ -343,7 +343,7 @@ lua_embed = rule(
         "lang": attrs.enum(["c", "rust"], default = "c"),
         "symbol": attrs.option(attrs.string(), default = None),
         "out": attrs.option(attrs.string(), default = None),
-        "_embedder": attrs.source(default = "monomono//rules/lua:embed.lua"),
+        "_embedder": attrs.source(default = "nomimono//rules/lua:embed.lua"),
         "toolchain": _TC_OVERRIDE,
         "_lua_toolchain": _TOOLCHAIN,
     },
@@ -361,7 +361,7 @@ lua_wasm = rule(
     attrs = {
         "src": attrs.dep(doc = "a source lua_bundle (not bytecode)"),
         "out": attrs.option(attrs.string(), default = None),
-        "_wasm": attrs.source(default = "monomono//rules/lua:wasm.lua"),
+        "_wasm": attrs.source(default = "nomimono//rules/lua:wasm.lua"),
         "toolchain": _TC_OVERRIDE,
         "_lua_toolchain": _TOOLCHAIN,
     },
@@ -381,7 +381,7 @@ lua_meta = rule(
         "provided": attrs.list(attrs.source(), default = [], doc = "---@meta files you render yourself; modules they declare are not stubbed"),
         "toolchain": _TC_OVERRIDE,
         "_lua_toolchain": _TOOLCHAIN,
-        "_meta": attrs.source(default = "monomono//rules/lua:meta.lua"),
+        "_meta": attrs.source(default = "nomimono//rules/lua:meta.lua"),
     },
 )
 
@@ -515,10 +515,10 @@ lua_feature_test = rule(
     attrs = dict({
         "features": attrs.list(attrs.source(), doc = "Gherkin .feature files"),
         "steps": attrs.option(attrs.source(), default = None, doc = "step definitions: a Lua file using require('mono.steps'); optional with your own runner, which then gets only the features"),
-        "runner": attrs.option(attrs.dep(providers = [RunInfo]), default = None, doc = "your own runner target; monomono's is not used"),
+        "runner": attrs.option(attrs.dep(providers = [RunInfo]), default = None, doc = "your own runner target; nomimono's is not used"),
         "runner_cmd": attrs.list(attrs.string(), default = [], doc = "your own runner as a host command"),
         "deps": _DEPS,
-        "_runner": attrs.source(default = "monomono//rules/lua:lib/mono/features.lua"),
+        "_runner": attrs.source(default = "nomimono//rules/lua:lib/mono/features.lua"),
         "toolchain": _TC_OVERRIDE,
         "_lua_toolchain": _TOOLCHAIN,
         "_stdlib": _STDLIB,

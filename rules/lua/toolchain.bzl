@@ -231,7 +231,7 @@ _luacheck_toolchain = rule(
     attrs = {
         "src": attrs.dep(),
         "argparse": attrs.dep(),
-        "shim": attrs.source(allow_directory = True, default = "monomono//rules/lua:shim"),
+        "shim": attrs.source(allow_directory = True, default = "nomimono//rules/lua:shim"),
         "lua": attrs.toolchain_dep(default = "toolchains//:lua", providers = [LuaToolchainInfo]),
     },
     is_toolchain_rule = True,

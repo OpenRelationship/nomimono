@@ -1,4 +1,4 @@
-Run this at session start if root `AGENTS.md` is missing, then follow `AGENTS.md` files in the repo. Do not open `.agents/` or `packages/monomono/` for standing rules.
+Run this at session start if root `AGENTS.md` is missing, then follow `AGENTS.md` files in the repo. Do not open `.agents/` or `packages/nomimono/` for standing rules.
 
 ```
 just agents sync

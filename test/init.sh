@@ -4,7 +4,7 @@
 # (library/test/bundle/embed/hosts, lint/format/meta/typecheck, Gherkin runner + telemetry,
 # coverage/profile, script backend + hooks, other interpreters, host and config toolchains, provider refusal).
 #
-# MONO_SELFTEST_SKIP=a,b  skips sections by name (rust, wasm, luals, cmod, interpreters, stylua, luacheck).
+# MONO_SELFTEST_SKIP=a,b  skips sections by name (rust, wasm, luals, cmod, interpreters, stylua, luacheck, rename).
 #
 # Under `set -e` a command inverted with `!` never exits the script, so a negative assertion is written
 # `refute cmd...` (fails the script when cmd succeeds), never `! cmd`.
@@ -26,7 +26,7 @@ refute() { if "$@" >/dev/null 2>&1; then echo "expected to fail: $*" >&2; exit 1
 # package (and pin mono.toml to its VERSION) so what is under test is the checkout as it is, not its last
 # commit (identical in CI, where the tree is clean)
 overlay() {
-  rsync -a --delete --exclude .git --exclude buck-out "$here/" "$1/"
+  rsync -a --checksum --delete --exclude .git --exclude buck-out "$here/" "$1/"
   local manifest="$1/../../mono.toml"
   [[ -f $manifest ]] && sed -i.bak "s/^version = \".*\"/version = \"$(tr -d '[:space:]' <"$here/VERSION")\"/" "$manifest" && rm -f "$manifest.bak"
   return 0
@@ -50,8 +50,8 @@ step "init consumer at $work/demo from $here"
 mkdir -p "$work/demo"
 git -C "$work/demo" init -q
 git -C "$work/demo" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init
-MONO_REPO_URL="$here" "$here/bin/monomono" init "$work/demo" --ref "$ref" --name demo
-overlay "$work/demo/packages/monomono"
+MONO_REPO_URL="$here" "$here/bin/nomimono" init "$work/demo" --ref "$ref" --name demo
+overlay "$work/demo/packages/nomimono"
 cd "$work/demo"
 
 step "no python anywhere in the package"
@@ -76,7 +76,7 @@ echo "allow-duplicate-recipes: your recipe wins; ignores are anchored, a committ
 step "doctor"
 just doctor
 toolpath "$work/nojust" 'just'
-out=$(PATH="$work/nojust" packages/monomono/scripts/tools/doctor.sh 2>&1) || { echo "$out"; echo "doctor must not fail without just on PATH" >&2; exit 1; }
+out=$(PATH="$work/nojust" packages/nomimono/scripts/tools/doctor.sh 2>&1) || { echo "$out"; echo "doctor must not fail without just on PATH" >&2; exit 1; }
 grep -q 'warn  just not on PATH' <<<"$out"
 mkdir -p notes targets-only && printf 'a note\n' > notes/README.md && printf '# a folder that holds targets\n' > targets-only/BUCK
 out=$(just doctor 2>&1)
@@ -117,7 +117,7 @@ expect "make \(hermetic lua toolchain\)" just doctor
 step "lua: library with resources, spec tests (TAP), lua_tests suite"
 mkdir -p library/greet/util library/greet/data library/greet/meta app/hello
 cat > library/greet/BUCK <<'BUCK'
-load("@monomono//rules/lua:defs.bzl", "lua_library", "lua_tests", "lua_lint", "lua_format", "lua_meta", "lua_repl", "lua_typecheck", "lua_bundle")
+load("@nomimono//rules/lua:defs.bzl", "lua_library", "lua_tests", "lua_lint", "lua_format", "lua_meta", "lua_repl", "lua_typecheck", "lua_bundle")
 lua_library(name = "greet", srcs = ["greet.lua", "util/init.lua"], resources = ["data/config.json"], visibility = ["PUBLIC"])
 lua_tests(name = "tests", srcs = glob(["test_*.lua"]), deps = [":greet"])
 lua_repl(name = "repl", deps = [":greet"])
@@ -169,7 +169,7 @@ echo "TAP + resources ok"
 step "lua: module prefix (a per-flow BUCK keeps its namespace) + a feature test with your own runner"
 mkdir -p library/hourly-check
 cat > library/hourly-check/BUCK <<'BUCK'
-load("@monomono//rules/lua:defs.bzl", "lua_library", "lua_test", "lua_feature_test")
+load("@nomimono//rules/lua:defs.bzl", "lua_library", "lua_test", "lua_feature_test")
 lua_library(name = "hourly-check", srcs = ["compare.lua"], prefix = "hourly-check", visibility = ["PUBLIC"])
 lua_test(name = "test", src = "test_compare.lua", deps = [":hourly-check"])
 lua_feature_test(name = "own-runner", features = ["flow.feature"], runner_cmd = ["bash", "library/hourly-check/runner.sh"], deps = [":hourly-check"])
@@ -208,7 +208,7 @@ grep -q '@field version string' .lua-meta/greet.lua
 echo "stubs generated and provided stubs win"
 mkdir -p library/fnmod
 cat > library/fnmod/BUCK <<'BUCK'
-load("@monomono//rules/lua:defs.bzl", "lua_library")
+load("@nomimono//rules/lua:defs.bzl", "lua_library")
 lua_library(name = "fnmod", srcs = ["fnmod.lua"], visibility = ["PUBLIC"])
 BUCK
 printf -- '--- A module that is a function.\n---@param n number\n---@return number\nreturn function(n)\n  return n * 2\nend\n' > library/fnmod/fnmod.lua
@@ -295,7 +295,7 @@ step "lua: C module on LUA_CPATH"
 if ! skip cmod; then
   mkdir -p library/cmod
   cat > library/cmod/BUCK <<'BUCK'
-load("@monomono//rules/lua:defs.bzl", "lua_library", "lua_test")
+load("@nomimono//rules/lua:defs.bzl", "lua_library", "lua_test")
 genrule(
     name = "so",
     srcs = ["twice.c"],
@@ -319,8 +319,8 @@ fi
 
 step "lua: binary, bytecode bundle, C host"
 cat > app/hello/BUCK <<'BUCK'
-load("@monomono//rules/lua:defs.bzl", "lua_binary", "lua_bundle", "lua_embed")
-load("@monomono//rules/lua:toolchain.bzl", "lua_cxx_library")
+load("@nomimono//rules/lua:defs.bzl", "lua_binary", "lua_bundle", "lua_embed")
+load("@nomimono//rules/lua:toolchain.bzl", "lua_cxx_library")
 lua_binary(name = "hello", main = "main.lua", deps = ["//library/greet:greet"])
 lua_bundle(name = "bundle", main = "main.lua", deps = ["//library/greet:greet"], bytecode = True)
 lua_embed(name = "embedded", src = ":bundle", symbol = "hello_lua")
@@ -349,8 +349,8 @@ if ! skip rust; then
     just toolchain add rust
     mkdir -p app/hello-rs
     cat > app/hello-rs/BUCK <<'BUCK'
-load("@monomono//rules/lua:defs.bzl", "lua_bundle", "lua_embed")
-load("@monomono//rules/lua:toolchain.bzl", "lua_cxx_library")
+load("@nomimono//rules/lua:defs.bzl", "lua_bundle", "lua_embed")
+load("@nomimono//rules/lua:toolchain.bzl", "lua_cxx_library")
 lua_bundle(name = "bundle", main = "main.lua", deps = ["//library/greet:greet"], dialect = "portable")
 lua_embed(name = "embedded", src = ":bundle", lang = "rust", symbol = "hello_lua")
 lua_cxx_library(name = "liblua")
@@ -399,7 +399,7 @@ if ! skip wasm; then
   if have bun; then
     mkdir -p app/web
     cat > app/web/BUCK <<'BUCK'
-load("@monomono//rules/lua:defs.bzl", "lua_bundle", "lua_wasm")
+load("@nomimono//rules/lua:defs.bzl", "lua_bundle", "lua_wasm")
 lua_bundle(name = "bundle", main = "main.lua", deps = ["//library/greet:greet"], dialect = "portable")
 lua_wasm(name = "web", src = ":bundle")
 BUCK
@@ -461,14 +461,14 @@ just test //context/projects/demo-app/features/hello:hello-gherkin
 out=$(just run //context/projects/demo-app/features/hello:hello-gherkin 2>&1 | quiet)
 grep -q '# 3 passed, 0 failed, 0 undefined' <<<"$out"
 out=$(just lua trace //context/projects/demo-app/features/hello:hello-gherkin 2>&1)
-grep -q 'monomono.scenario' <<<"$out"
-grep -q 'monomono.step' <<<"$out"
+grep -q 'nomimono.scenario' <<<"$out"
+grep -q 'nomimono.step' <<<"$out"
 test -f trace.json
 grep -q '"resourceSpans"' trace.json
-grep -q '"monomono.outcome"' trace.json
+grep -q '"nomimono.outcome"' trace.json
 refute grep -q 'malleable' trace.json
 cat > library/greet/profile.lua <<'LUA'
--- a consumer's telemetry profile: its own collector's names (here, an agent harness's) replace monomono's
+-- a consumer's telemetry profile: its own collector's names (here, an agent harness's) replace nomimono's
 return {
   version = 1,
   minted = {
@@ -499,9 +499,9 @@ LUA
 sed -i.bak 's/srcs = \["greet.lua", "util\/init.lua"\]/srcs = ["greet.lua", "util\/init.lua", "profile.lua"]/' library/greet/BUCK && rm library/greet/BUCK.bak
 MONO_TELEMETRY_PROFILE=profile MONO_TRACE_OUT="$work/profiled.json" buck2 run //context/projects/demo-app/features/hello:hello-gherkin >/dev/null 2>&1
 grep -q '"malleable.scenario ' "$work/profiled.json" && grep -q '"malleable.outcome"' "$work/profiled.json" && grep -q '"malleable.keyword"' "$work/profiled.json"
-refute grep -q 'monomono\.' "$work/profiled.json"
+refute grep -q 'nomimono\.' "$work/profiled.json"
 just lua fmt //library/greet:fmt >/dev/null
-echo "default names are monomono.*; a consumer profile that renames every name leaves no monomono.* key in the trace"
+echo "default names are nomimono.*; a consumer profile that renames every name leaves no nomimono.* key in the trace"
 grep -q '"gen_ai' trace.json || true
 out=$(just lua observe //context/projects/demo-app/features/hello:hello-gherkin 2>&1)
 grep -q 'Scenario: plain greeting' <<<"$out"
@@ -529,14 +529,14 @@ echo "just tool runs .lua backends; hooks/pre-build.lua runs before buck2 build"
 step "lua: other interpreters (5.1, 5.3, LuaJIT) via the toolchain attr"
 if ! skip interpreters; then
   cat >> toolchains/BUCK <<'BUCK'
-load("@monomono//rules/lua:toolchain.bzl", "lua_hermetic_toolchain", "luajit_hermetic_toolchain")
+load("@nomimono//rules/lua:toolchain.bzl", "lua_hermetic_toolchain", "luajit_hermetic_toolchain")
 lua_hermetic_toolchain(name = "lua51", version = "5.1.5")
 lua_hermetic_toolchain(name = "lua53", version = "5.3.6")
 luajit_hermetic_toolchain(name = "luajit")
 BUCK
   mkdir -p app/multi
   cat > app/multi/BUCK <<'BUCK'
-load("@monomono//rules/lua:defs.bzl", "lua_binary", "lua_test", "lua_bundle")
+load("@nomimono//rules/lua:defs.bzl", "lua_binary", "lua_test", "lua_bundle")
 lua_binary(name = "v51", main = "main.lua", deps = ["//library/greet:greet"], toolchain = "toolchains//:lua51")
 lua_binary(name = "v53", main = "main.lua", deps = ["//library/greet:greet"], toolchain = "toolchains//:lua53")
 lua_binary(name = "vjit", main = "main.lua", deps = ["//library/greet:greet"], toolchain = "toolchains//:luajit")
@@ -568,8 +568,8 @@ just agents check
 step "check (definition of green)"
 just check
 
-step "update path: a 0.4.0-shaped consumer runs migration 0.4.1 (migrate + sync)"
-git -C packages/monomono checkout -q "$ref"
+step "update path: a 0.4.0-shaped consumer runs migrations 0.4.1 and 0.5.0 (migrate + sync)"
+git -C packages/nomimono checkout -q "$ref"
 sed -i.bak -e 's|^/\.luarc\.json$|.luarc.json|' -e 's|^/\.lua-meta/$|.lua-meta/|' -e 's|^/coverage\.txt$|coverage.txt|' -e 's|^/trace\.json$|trace.json|' -e 's|^/\.buckconfig\.local$|.buckconfig.local|' .gitignore && rm .gitignore.bak
 sed -i.bak '/^set allow-duplicate-recipes/d' justfile && rm justfile.bak
 sed -i.bak 's/^version = ".*"/version = "0.4.0"/' mono.toml && rm mono.toml.bak
@@ -577,8 +577,8 @@ refute grep -qx '/.luarc.json' .gitignore
 refute grep -q '^set allow-duplicate-recipes' justfile
 out=$(just mono migrate 2>&1); echo "$out"
 grep -q '^migrate 0.4.1$' <<<"$out"
-grep -q '^migrations run: 1 (0.4.0 -> ' <<<"$out"
-grep -q "^version = \"$(cat packages/monomono/VERSION)\"" mono.toml
+grep -q '^migrations run: 2 (0.4.0 -> ' <<<"$out"   # 0.4.1, then 0.5.0 (a no-op on a repo already on nomimono)
+grep -q "^version = \"$(cat packages/nomimono/VERSION)\"" mono.toml
 just mono status
 printf '\n# a consumer recipe shadows the package one of the same name\ndoctor:\n    @echo "my doctor"\n' >> justfile
 [[ "$(just doctor)" == "my doctor" ]]
@@ -601,9 +601,54 @@ echo "provider refusal + doctor line"
 toolpath "$work/nogit" 'git' 'git-*'
 sed -i.bak 's/^mode = "submodule"/mode = "vendor"/' mono.toml && rm mono.toml.bak
 if PATH="$work/nogit" MONO_REPO_URL=https://127.0.0.1:9/none just mono update >"$work/out" 2>&1; then echo "expected update to refuse under mode = vendor" >&2; exit 1; fi
-grep -q 'monomono is vendored' "$work/out"
+grep -q 'nomimono is vendored' "$work/out"
 cp "$work/mono.toml.bak" mono.toml
 echo "mode = vendor alone refuses just mono update, with no git on PATH (it never fetches)"
+
+step "rename (0.5.0): a monomono 0.4.3 consumer, updated by its own 0.4.3 updater, lands on packages/nomimono"
+if skip rename; then :
+elif ! git -C "$here" rev-parse -q --verify 'v0.4.3^{commit}' >/dev/null; then
+  echo "   (skipped: no v0.4.3 tag in this clone; fetch tags to run it)"
+else
+  # a ref holding the working tree as it is, so the updater checks out what is under test
+  git clone -q "$here" "$work/pkg"
+  rsync -a --checksum --delete --exclude .git --exclude buck-out "$here/" "$work/pkg/"
+  git -C "$work/pkg" add -A
+  git -C "$work/pkg" -c user.email=t@t -c user.name=t commit -q --allow-empty -m "under test"
+  head=$(git -C "$work/pkg" rev-parse HEAD)
+  git -C "$work/pkg" show v0.4.3:bin/monomono >"$work/old-bootstrap"
+  mkdir -p "$work/legacy" && git -C "$work/legacy" init -q
+  git -C "$work/legacy" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init
+  MONO_REPO_URL="$work/pkg" bash "$work/old-bootstrap" init "$work/legacy" --ref v0.4.3 --name legacy >/dev/null
+  (
+    cd "$work/legacy"
+    printf '\n## Notes\n\n- The package lives at `packages/monomono/` (see [monomono](https://github.com/shinyobjectz/monomono)).\n' >> .agents/AGENTS.md
+    mkdir -p submodules/keep && printf 'packages/monomono stays here\n' > submodules/keep/README
+    git add -A && git -c user.email=t@t -c user.name=t commit -q -m "a 0.4.3 consumer"
+    out=$(just mono update "$head" 2>&1) || { echo "$out"; echo "the 0.4.3 updater failed on the rename" >&2; exit 1; }
+    echo "$out" | grep -E '^(migrate|  )' || true
+    grep -q '^migrate 0.5.0$' <<<"$out"
+    test -f packages/nomimono/VERSION && test ! -e packages/monomono && test ! -L packages/monomono
+    grep -qx '\[nomimono\]' mono.toml && refute grep -q monomono mono.toml
+    grep -q "^version = \"$(cat packages/nomimono/VERSION)\"" mono.toml
+    grep -q 'path = packages/nomimono' .gitmodules
+    [[ $(git ls-files --stage packages/nomimono | awk '{print $1}') == 160000 ]]
+    grep -q "^import 'packages/nomimono/mono.just'" justfile
+    grep -q '^  nomimono = packages/nomimono' .buckconfig
+    grep -q '@nomimono//' BUCK && grep -q '^# nomimono:toolchain test$' toolchains/BUCK
+    grep -q 'see \[nomimono\](https://github.com/OpenRelationship/nomimono)' .agents/AGENTS.md
+    grep -q 'packages/monomono stays here' submodules/keep/README
+    left=$(git grep -I -l monomono -- ':!.gitmodules' ':!submodules' || true)
+    [[ -z $left ]] || { echo "monomono left in: $left" >&2; exit 1; }
+    git -c user.email=t@t -c user.name=t commit -q -am "nomimono" && git add -A && git -c user.email=t@t -c user.name=t commit -q -m rest --allow-empty
+    again=$(MONO_ROOT="$PWD" MONO_SECTION=nomimono bash packages/nomimono/migrations/0.5.0.sh 2>&1)
+    grep -q '0 file(s) rewritten' <<<"$again"
+    [[ -z $(git status --porcelain) ]] || { git status --porcelain; echo "re-running 0.5.0 changed the tree" >&2; exit 1; }
+    expect "^installed +$(cat packages/nomimono/VERSION)" just mono status
+    just check >/dev/null
+  )
+  echo "0.4.3 updater + 0.5.0 migration: package, cell, marker, import, manifest and docs renamed; submodules/ untouched; re-run is a no-op; just check green"
+fi
 
 # --- a second consumer, in a path with a space, without the hermetic interpreter --------
 
@@ -613,8 +658,8 @@ lua_bin="$work/demo/$lua_bin"
 mkdir -p "$work/host demo"
 git -C "$work/host demo" init -q
 git -C "$work/host demo" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init
-MONO_REPO_URL="$here" "$here/bin/monomono" init "$work/host demo" --ref "$ref" --name hostdemo
-overlay "$work/host demo/packages/monomono"
+MONO_REPO_URL="$here" "$here/bin/nomimono" init "$work/host demo" --ref "$ref" --name hostdemo
+overlay "$work/host demo/packages/nomimono"
 cd "$work/host demo"
 cat > app-host.sh <<SH
 #!/usr/bin/env bash
@@ -628,7 +673,7 @@ just toolchain add lua-host
 printf '[lua]\n  host = %s/app-host.sh\n  bin = %s\n' "$work/host demo" "$lua_bin" > .buckconfig.local   # both set: host wins for tests, bin serves bundle/meta
 mkdir -p library/x
 cat > library/x/BUCK <<'BUCK'
-load("@monomono//rules/lua:defs.bzl", "lua_library", "lua_test", "lua_bundle", "lua_meta", "lua_feature_test")
+load("@nomimono//rules/lua:defs.bzl", "lua_library", "lua_test", "lua_bundle", "lua_meta", "lua_feature_test")
 lua_library(name = "x", srcs = ["x.lua"])
 lua_test(name = "test", src = "test_x.lua", deps = [":x"])
 lua_bundle(name = "bundle", main = "test_x.lua", deps = [":x"], dialect = "portable")
@@ -651,8 +696,8 @@ expect "ran .*features.lua inside the app runtime" just run //library/x:gherkin
 expect "# 1 passed, 0 failed, 0 undefined" just run //library/x:gherkin
 echo "with both host and bin set: bundle and meta build through bin, the bundled feature runner runs through the host"
 cp toolchains/BUCK "$work/tc.bak"
-sed -i.bak '/^# monomono:toolchain lua-host$/d' toolchains/BUCK && rm toolchains/BUCK.bak
-expect 'without a "# monomono:toolchain' just doctor
+sed -i.bak '/^# nomimono:toolchain lua-host$/d' toolchains/BUCK && rm toolchains/BUCK.bak
+expect 'without a "# nomimono:toolchain' just doctor
 cp "$work/tc.bak" toolchains/BUCK
 echo "a toolchains/BUCK that declares toolchains//:lua without its marker line gets a doctor warning"
 mkdir -p scripts/hooks && printf 'print("lua hook ran")\n' > scripts/hooks/pre-build.lua
@@ -661,7 +706,7 @@ rm scripts/hooks/pre-build.lua
 just context project new p >/dev/null && just context feature new p f >/dev/null
 expect "step skeleton" just context feature test p f --steps
 echo "under lua-host the .lua hook and the --steps writer run through the host command"
-sed -i.bak '/# monomono:toolchain lua-host/,$d' toolchains/BUCK && rm toolchains/BUCK.bak
+sed -i.bak '/# nomimono:toolchain lua-host/,$d' toolchains/BUCK && rm toolchains/BUCK.bak
 just toolchain add lua-config
 printf '[lua]\n  bin = %s\n' "$lua_bin" > .buckconfig.local
 just test //library/x:test
@@ -673,20 +718,20 @@ echo "under lua-config the .lua backends run through [lua] bin"
 # --- a third consumer: vendored (the package is a sibling cell, no submodule), no context module, no python on PATH
 
 step "vendored sibling cell in a folder that is not a git repository, --no-context, and a PATH without python or git"
-# the package is copied in by the app that ships it (no bin/monomono, no clone); nothing here may need git
+# the package is copied in by the app that ships it (no bin/nomimono, no clone); nothing here may need git
 mkdir -p "$work/vend/packages"
 toolpath "$work/nopy" 'python*' 'pip*' 'git' 'git-*'
 [[ ! -e $work/nopy/python3 && ! -e $work/nopy/python && ! -e $work/nopy/git ]]
-mkdir -p "$work/vend/packages/monomono" && overlay "$work/vend/packages/monomono"
+mkdir -p "$work/vend/packages/nomimono" && overlay "$work/vend/packages/nomimono"
 cd "$work/vend"
 test ! -d .git
-MONO_HOME="$PWD/packages/monomono" MONO_ROOT="$PWD" PATH="$work/nopy" bash packages/monomono/scripts/tools/mono.sh init --mode vendor --provider selftest --no-context --name vend
-test ! -d packages/monomono/.git
+MONO_HOME="$PWD/packages/nomimono" MONO_ROOT="$PWD" PATH="$work/nopy" bash packages/nomimono/scripts/tools/mono.sh init --mode vendor --provider selftest --no-context --name vend
+test ! -d packages/nomimono/.git
 grep -q 'context = "false"' mono.toml
 grep -q 'mode = "vendor"' mono.toml
 PATH="$work/nopy" just toolchain add lua >/dev/null
 mkdir -p library/v
-printf 'load("@monomono//rules/lua:defs.bzl", "lua_library", "lua_test")\nlua_library(name = "v", srcs = ["v.lua"])\nlua_test(name = "test", src = "t.lua", deps = [":v"])\n' > library/v/BUCK
+printf 'load("@nomimono//rules/lua:defs.bzl", "lua_library", "lua_test")\nlua_library(name = "v", srcs = ["v.lua"])\nlua_test(name = "test", src = "t.lua", deps = [":v"])\n' > library/v/BUCK
 printf 'return { one = 1 }\n' > library/v/v.lua
 printf 'assert(require("v").one == 1)\n' > library/v/t.lua
 out=$(PATH="$work/nopy" just doctor 2>&1) || { echo "$out"; exit 1; }
@@ -695,7 +740,7 @@ grep -q 'vendored by selftest' <<<"$out"
 grep -q 'git not installed (optional' <<<"$out"
 PATH="$work/nopy" just check
 expect "provided by selftest" env PATH="$work/nopy" just mono update
-echo "vendored @monomono cell loads from packages/monomono in a non-git folder; no sqlite3 asked for; just check green with no python and no git on PATH"
+echo "vendored @nomimono cell loads from packages/nomimono in a non-git folder; no sqlite3 asked for; just check green with no python and no git on PATH"
 
 echo
 echo "selftest ok"

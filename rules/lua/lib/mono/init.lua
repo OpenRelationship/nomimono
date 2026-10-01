@@ -1,4 +1,4 @@
---- monomono support library. Always on LUA_PATH for lua_binary, lua_test, lua_repl.
+--- nomimono support library. Always on LUA_PATH for lua_binary, lua_test, lua_repl.
 --- @module 'mono'
 local mono = {}
 mono.resource = require("mono.resource")

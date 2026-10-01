@@ -1,9 +1,9 @@
 """Domain-free macros over the buck2 prelude.
 
-load("@monomono//rules:defs.bzl", "mono_check", "mono_script", "mono_feature_tests")
+load("@nomimono//rules:defs.bzl", "mono_check", "mono_script", "mono_feature_tests")
 """
 
-load("@monomono//rules/lua:defs.bzl", "lua_feature_test", "lua_test")
+load("@nomimono//rules/lua:defs.bzl", "lua_feature_test", "lua_test")
 
 def mono_script(name, main, resources = None, visibility = ["PUBLIC"], **kwargs):
     """A runnable shell script: `just run //path:name`."""
@@ -24,7 +24,7 @@ def mono_feature_tests(name, tests, features = None, steps = None, deps = None, 
     """A feature's test targets plus a test_suite named `name`.
     .sh files run as shell checks; .lua files run under toolchains//:lua with `deps` on LUA_PATH;
     when `steps` names a steps file (or `runner`/`runner_cmd` names your own runner), every .feature in
-    `features` runs as Gherkin scenarios; monomono's runner traces the run as spans (MONO_TRACE_OUT=file for
+    `features` runs as Gherkin scenarios; nomimono's runner traces the run as spans (MONO_TRACE_OUT=file for
     OTLP JSON; MONO_TELEMETRY_PROFILE names them)."""
     targets = []
     tags = (labels or []) + ["feature:" + name]

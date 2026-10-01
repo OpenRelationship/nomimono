@@ -24,7 +24,7 @@ USAGE
 }
 
 interp() { lua_bin; }
-stdlib_dir() { buck2_out "monomono//rules/lua:lib"; }
+stdlib_dir() { buck2_out "nomimono//rules/lua:lib"; }
 
 verb=${1-}
 shift || true

@@ -1,4 +1,4 @@
-# monomono — recipes every consumer gets. The root justfile imports this file.
+# nomimono — recipes every consumer gets. The root justfile imports this file.
 # Bodies call scripts under this file's directory. No logic lives here.
 
 mono_home := source_directory()

@@ -1,36 +1,38 @@
-# monomono
+# 🍶 nomimono
+
+*Nomimono* (飲み物) is Japanese for "a drink". The package was called monomono until 0.5.0.
 
 A monorepo contract you attach, not a template you fork.
 
-monomono gives a repo four things and takes no opinion about anything else: a `just` door, a buck2 build graph, an `AGENTS.md` contract, and a spec-first lifecycle. No language, vendor, cloud, framework, or domain is assumed. Toolchains are declared one at a time. Package ecosystems are adapters you pick. Domains are folders you name.
+nomimono gives a repo four things and takes no opinion about anything else: a `just` door, a buck2 build graph, an `AGENTS.md` contract, and a spec-first lifecycle. No language, vendor, cloud, framework, or domain is assumed. Toolchains are declared one at a time. Package ecosystems are adapters you pick. Domains are folders you name.
 
-It is delivered as a versioned package. Consumers pin a release at `packages/monomono`, import its recipes, and move forward with `just mono update`.
+It is delivered as a versioned package. Consumers pin a release at `packages/nomimono`, import its recipes, and move forward with `just mono update`.
 
 ## Install on a machine
 
-One curl. It puts `just`, `buck2`, and the `monomono` bootstrap under `~/.local/bin` and keeps a checkout at `~/.monomono`. Re-run it (or `monomono upgrade`) to update them. It never touches a repo.
+One curl. It puts `just`, `buck2`, and the `nomimono` bootstrap under `~/.local/bin` and keeps a checkout at `~/.nomimono`. Re-run it (or `nomimono upgrade`) to update them. It never touches a repo.
 
 ```
-curl -fsSL https://raw.githubusercontent.com/shinyobjectz/monomono/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/OpenRelationship/nomimono/main/install.sh | bash
 ```
 
 ## Start a repo
 
 ```
 mkdir myrepo && cd myrepo && git init
-monomono init
+nomimono init
 just setup
 just check
 ```
 
-No machine install? The bootstrap alone also runs from curl: `curl -fsSL https://raw.githubusercontent.com/shinyobjectz/monomono/main/bin/monomono | bash -s -- init`.
+No machine install? The bootstrap alone also runs from curl: `curl -fsSL https://raw.githubusercontent.com/OpenRelationship/nomimono/main/bin/nomimono | bash -s -- init`.
 
-`init` adds this repo as a git submodule at `packages/monomono` pinned to the latest tag, copies the skeleton once (never overwriting), links `AGENTS.md`, and writes `mono.toml`. `--vendor` copies instead of submoduling. `--ref vX.Y.Z` pins a version.
+`init` adds this repo as a git submodule at `packages/nomimono` pinned to the latest tag, copies the skeleton once (never overwriting), links `AGENTS.md`, and writes `mono.toml`. `--vendor` copies instead of submoduling. `--ref vX.Y.Z` pins a version.
 
 ## What a consumer looks like
 
 ```
-justfile             import 'packages/monomono/mono.just' plus your own recipes
+justfile             import 'packages/nomimono/mono.just' plus your own recipes
 mono.toml            pinned version, mode, modules
 AGENTS.md            -> .agents/AGENTS.md, the repo contract (yours)
 CLAUDE.md            Claude Code bootstrap
@@ -40,13 +42,12 @@ toolchains/BUCK      genrule, python_bootstrap, test. Nothing else until you add
 app/                 deliverables
 library/             shared code, one folder per domain
 packages/<eco>/      third-party manifests and lockfiles, behind an adapter
-packages/monomono/   this package, pinned to a release
+packages/nomimono/   this package, pinned to a release
 context/             sqlite junk drawer + projects/<p>/features/<f>/{bdd,test,BUCK}
 scripts/             your just backends: build/ tools/ update/ as .sh or .lua; hooks/pre-build
 git/ci/              CI source; .github/workflows is a generated copy
 submodules/          public repos as git submodules
 .agents/             standing rules and generated skills
-packages/monomono/               this package
 ```
 
 Every folder that holds targets (a `BUCK` file somewhere beneath it) carries an `AGENTS.md` with its rules; `just doctor` warns when one is missing and says nothing about folders of plain files. Agents read the root contract first and the nested one before editing a tree.
@@ -72,15 +73,15 @@ just lua repl | run | cover | profile | meta | fmt | trace | observe | script
 
 ## Buck2
 
-The consumer is the buck2 project root. `.buckconfig` declares the bundled prelude, `toolchains//`, and `monomono//` (this package as a cell). `toolchains/BUCK` starts with the three toolchains needed to run a genrule and a test, and `just toolchain add <name>` appends a fragment for cxx, python, rust, go, haskell, ocaml, or one of the Lua toolchains, hoisting `load()` lines to the top. Each fragment sits under a `# monomono:toolchain <name>` line, and that line is the contract: the scripts read `toolchains/BUCK` through it, never through the Starlark (`just toolchain list`, doctor's make/cc check, and which interpreter runs `.lua` hooks and scripts — see Lua). A `toolchains/BUCK` written by hand or generated by an app writes the same line above each toolchain it declares; `just doctor` warns when `toolchains//:lua` is declared without one. Feature tests are `sh_test` targets under `context/`, so the lifecycle is enforced by the same graph that builds the product. Swap the generated `sh_test` for your language's test rule when you have one.
+The consumer is the buck2 project root. `.buckconfig` declares the bundled prelude, `toolchains//`, and `nomimono//` (this package as a cell). `toolchains/BUCK` starts with the three toolchains needed to run a genrule and a test, and `just toolchain add <name>` appends a fragment for cxx, python, rust, go, haskell, ocaml, or one of the Lua toolchains, hoisting `load()` lines to the top. Each fragment sits under a `# nomimono:toolchain <name>` line, and that line is the contract: the scripts read `toolchains/BUCK` through it, never through the Starlark (`just toolchain list`, doctor's make/cc check, and which interpreter runs `.lua` hooks and scripts — see Lua). A `toolchains/BUCK` written by hand or generated by an app writes the same line above each toolchain it declares; `just doctor` warns when `toolchains//:lua` is declared without one. Feature tests are `sh_test` targets under `context/`, so the lifecycle is enforced by the same graph that builds the product. Swap the generated `sh_test` for your language's test rule when you have one.
 
-`@monomono//rules:defs.bzl` exposes small macros: `mono_check` (a shell test from the repo root), `mono_script` (a runnable), `mono_feature_tests` (one target per test file plus a suite).
+`@nomimono//rules:defs.bzl` exposes small macros: `mono_check` (a shell test from the repo root), `mono_script` (a runnable), `mono_feature_tests` (one target per test file plus a suite).
 
 ## Lua
 
-The prelude has no Lua rules, so monomono ships them. `just toolchain add lua` declares a hermetic Lua 5.4.7 built once from pinned source into buck-out. `lua-5.1`, `lua-5.3` and `luajit` are the same thing for other interpreters; `lua-system` uses whatever is on PATH; `lua-config` reads `[lua] bin` from `.buckconfig.local`; `lua-host` has no interpreter at all and runs every test and binary through `[lua] host = <program>`, which is what an app with its own embedded runtime wants. Any target can also name its own interpreter with `toolchain = "toolchains//:luajit"`.
+The prelude has no Lua rules, so nomimono ships them. `just toolchain add lua` declares a hermetic Lua 5.4.7 built once from pinned source into buck-out. `lua-5.1`, `lua-5.3` and `luajit` are the same thing for other interpreters; `lua-system` uses whatever is on PATH; `lua-config` reads `[lua] bin` from `.buckconfig.local`; `lua-host` has no interpreter at all and runs every test and binary through `[lua] host = <program>`, which is what an app with its own embedded runtime wants. Any target can also name its own interpreter with `toolchain = "toolchains//:luajit"`.
 
-`@monomono//rules/lua:defs.bzl` gives every `.lua` file a place in the graph:
+`@nomimono//rules/lua:defs.bzl` gives every `.lua` file a place in the graph:
 
 ```
 lua_library(name, srcs, deps, root, prefix, cpath, resources)   modules on LUA_PATH (prefix keeps a per-folder BUCK's namespace), C modules on LUA_CPATH, resources; luac -p on every build
@@ -99,11 +100,11 @@ lua_cxx_library(name)                                  the interpreter as a C li
 
 `lua_typecheck(luarc = ...)` hands LuaLS your `.luarc.json` as it is, by absolute path (LuaLS resolves a relative `--configpath` against the checked directory and ignores a missing one without a word), and LuaLS resolves a relative `workspace.library` entry against the checked `path`, not against the luarc's own directory: a `library/.luarc.json` saying `["meta"]` reads `library/meta/` under `lua_typecheck(path = "library", ...)` and `library/flow/meta/` under `path = "library/flow"`. One target at the directory the luarc sits in is the shape that works; a per-subfolder target needs `"../meta"`. LuaLS also reads a file named `.luarc.json` that it finds at `path` on its own, whatever `luarc` names, so a differently named file (or one outside `path`) is the way to keep two configurations apart. The default `level` is `warning`.
 
-`just lua` is the dev loop over the same graph: `repl`, `run`, `cover` (lcov-style `coverage.txt`), `profile`, `meta` (writes `.luarc.json` and `.lua-meta/` for the editor), `fmt`, `trace`, `observe`, `script`. Scripts under `scripts/{build,tools,update}/<name>.lua` are just backends like their `.sh` neighbours, with `scripts/lib/` and the `mono` stdlib on the path; `scripts/hooks/pre-build.{sh,lua}` runs before every `just build`. Whatever declared `toolchains//:lua` runs them: the hermetic build, `[lua] bin`, or under `lua-host` the host command (which wins over `bin` for tests, hooks and scripts; `bin` still serves bundle, meta and the compile check). The scripts learn which from the `# monomono:toolchain <name>` line above the declaration (`lua`, `lua-5.1`, `lua-5.3`, `luajit`: the hermetic build; `lua-system`: PATH; `lua-host`: the host; `lua-config` or no line: `[lua] bin`). `cover` and `profile` need an interpreter.
+`just lua` is the dev loop over the same graph: `repl`, `run`, `cover` (lcov-style `coverage.txt`), `profile`, `meta` (writes `.luarc.json` and `.lua-meta/` for the editor), `fmt`, `trace`, `observe`, `script`. Scripts under `scripts/{build,tools,update}/<name>.lua` are just backends like their `.sh` neighbours, with `scripts/lib/` and the `mono` stdlib on the path; `scripts/hooks/pre-build.{sh,lua}` runs before every `just build`. Whatever declared `toolchains//:lua` runs them: the hermetic build, `[lua] bin`, or under `lua-host` the host command (which wins over `bin` for tests, hooks and scripts; `bin` still serves bundle, meta and the compile check). The scripts learn which from the `# nomimono:toolchain <name>` line above the declaration (`lua`, `lua-5.1`, `lua-5.3`, `luajit`: the hermetic build; `lua-system`: PATH; `lua-host`: the host; `lua-config` or no line: `[lua] bin`). `cover` and `profile` need an interpreter.
 
 ### Gherkin and telemetry
 
-`just context feature test <project> <slug> --steps` binds `bdd/*.feature` in `test/steps.lua` (`require("mono.steps")` with `{string}`, `{int}`, `{float}`, `{word}`, `{value}` placeholders) and the feature BUCK gets a `<slug>-gherkin` target. The runner prints TAP, counts undefined sentences instead of passing them, and records every feature, scenario and step as a span (`monomono.feature` → `monomono.scenario` → `monomono.step`, with `monomono.outcome`). `just lua trace` prints the tree and writes OTLP JSON to `trace.json`; `just lua observe` reads a trace back as Gherkin; `MONO_REPORT_OUT` writes one JSON row per scenario for an app to ingest.
+`just context feature test <project> <slug> --steps` binds `bdd/*.feature` in `test/steps.lua` (`require("mono.steps")` with `{string}`, `{int}`, `{float}`, `{word}`, `{value}` placeholders) and the feature BUCK gets a `<slug>-gherkin` target. The runner prints TAP, counts undefined sentences instead of passing them, and records every feature, scenario and step as a span (`nomimono.feature` → `nomimono.scenario` → `nomimono.step`, with `nomimono.outcome`). `just lua trace` prints the tree and writes OTLP JSON to `trace.json`; `just lua observe` reads a trace back as Gherkin; `MONO_REPORT_OUT` writes one JSON row per scenario for an app to ingest.
 
 The vocabulary is closed and yours: `MONO_TELEMETRY_PROFILE=<module>` (or `require("mono.telemetry").vocabulary(profile)` in a steps file) adds your collector's attribute names and renames the join spans, so an app's own spans and its feature runs land in one trace under the app's names, not this package's. `require("mono.telemetry")` is the same recorder for application code.
 
@@ -111,9 +112,15 @@ The vocabulary is closed and yours: `MONO_TELEMETRY_PROFILE=<module>` (or `requi
 
 Business logic in Lua, hosts in anything. A C host links `lua_cxx_library` and loads the embedded bundle; a Rust host does the same over the C API with no cargo (`mapped_srcs` takes the `.rs` embed), or takes the bundle into `mlua`; the browser gets `lua_wasm`; the BEAM loads the bundle through luerl. An app that ships its own interpreter declares `lua-host`, and an app that vendors this package writes `provider = "<app>"` in `mono.toml` so `just mono update` refuses and the app owns upgrades.
 
+## Names
+
+The package, its folder (`packages/nomimono`), its buck2 cell (`@nomimono//`), the toolchain marker (`# nomimono:toolchain`), the bootstrap (`nomimono`), the telemetry names (`nomimono.*`) and the manifest section (`[nomimono]`) carry the package's name. The `just mono <verb>` grammar, the `MONO_*` environment variables (`MONO_ROOT`, `MONO_HOME`, `MONO_DOC_MAX_LINES`, ...) and the `mono.toml` and `mono.just` file names stay `mono`: short, still the end of nomimono, and unchanged across the rename so habits and scripts keep working.
+
+A repo on monomono 0.4.x moves with `just mono update`: migration 0.5.0 moves `packages/monomono` to `packages/nomimono` and rewrites the cell, marker, import, manifest and contract docs in the repo's own files (never `submodules/` or vendored trees).
+
 ## Versioning
 
-Releases are semver tags. `mono.toml` records the version a consumer is on. `just mono update [ref]` moves `packages/monomono` to the tag, runs every `migrations/<version>.sh` between the old and new version in order, adds template files that did not exist before, resyncs generated files, and stages the result. Under `mode = "vendor"` it refuses and never fetches: whoever copied the package in replaces the copy, then runs `just mono migrate` and `just mono sync`. Consumer-owned files (`AGENTS.md`, `justfile`, `BUCK`, folder rules) are never overwritten; a change that must reach them ships as a migration.
+Releases are semver tags. `mono.toml` records the version a consumer is on. `just mono update [ref]` moves `packages/nomimono` to the tag, runs every `migrations/<version>.sh` between the old and new version in order, adds template files that did not exist before, resyncs generated files, and stages the result. Under `mode = "vendor"` it refuses and never fetches: whoever copied the package in replaces the copy, then runs `just mono migrate` and `just mono sync`. Consumer-owned files (`AGENTS.md`, `justfile`, `BUCK`, folder rules) are never overwritten; a change that must reach them ships as a migration.
 
 ## Develop
 

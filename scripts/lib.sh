@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Shared helpers for monomono scripts. Source only.
-# MONO_HOME is the package checkout (packages/monomono in a consumer). MONO_ROOT is the repo it serves.
+# Shared helpers for nomimono scripts. Source only.
+# MONO_HOME is the package checkout (packages/nomimono in a consumer). MONO_ROOT is the repo it serves.
 
 set -euo pipefail
 
@@ -20,7 +20,7 @@ mono_find_root() {
 }
 
 if [[ -z ${MONO_ROOT:-} ]]; then
-  if [[ $(basename "$MONO_HOME") == monomono && -f $MONO_HOME/../../mono.toml ]]; then
+  if [[ $(basename "$MONO_HOME") == nomimono && -f $MONO_HOME/../../mono.toml ]]; then
     MONO_ROOT=$(cd "$MONO_HOME/../.." && pwd)
   elif MONO_ROOT=$(mono_find_root); then
     :
@@ -41,7 +41,7 @@ MONO_SUBMODULES="$MONO_ROOT/submodules"
 MONO_AGENTS="$MONO_ROOT/.agents"
 MONO_TOOLCHAINS="$MONO_ROOT/toolchains"
 MONO_CI="$MONO_ROOT/git/ci"
-MONO_REPO_URL="${MONO_REPO_URL:-https://github.com/shinyobjectz/monomono}"
+MONO_REPO_URL="${MONO_REPO_URL:-https://github.com/OpenRelationship/nomimono}"
 
 die() {
   echo "$*" >&2
@@ -140,14 +140,35 @@ in_git_repo() {
   git -C "$MONO_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1
 }
 
-# After the 0.2.0 move a migration leaves `.mono -> packages/monomono` so the old updater can finish.
+# After the 0.2.0 move a migration leaves a `.mono` link so the old updater can finish; drop it once it points
+# at this package or at nothing (a later move, such as 0.5.0's, leaves it dangling).
 mono_drop_legacy_link() {
-  if [[ -L $MONO_ROOT/.mono && $(cd "$MONO_ROOT/.mono" 2>/dev/null && pwd -P) == "$(cd "$MONO_HOME" && pwd -P)" ]]; then
+  if [[ -L $MONO_ROOT/.mono ]] && { [[ ! -e $MONO_ROOT/.mono ]] || [[ $(cd "$MONO_ROOT/.mono" 2>/dev/null && pwd -P) == "$(cd "$MONO_HOME" && pwd -P)" ]]; }; then
     rm -f "$MONO_ROOT/.mono"
     git -C "$MONO_ROOT" rm -q --cached .mono 2>/dev/null || true
     echo "removed legacy .mono link"
   fi
 }
+
+# The 0.5.0 rename (the package was called monomono before it). Silent and idempotent; runs on every source.
+# - a manifest that still has only the old section is read under the new name, so `just mono migrate` sees its version;
+# - the 0.4 updater that runs migrations/0.5.0.sh reads the old section and the old folder after the migration, so
+#   the migration leaves a stub section and a link for it; the first 0.5 script it calls (sync) drops both.
+mono_finish_rename() {
+  local old=monomono f=$MONO_MANIFEST
+  if [[ -f $f ]] && grep -qx "\[$old\]" "$f"; then
+    if grep -qx '\[nomimono\]' "$f"; then
+      awk -v s="[$old]" '/^\[/ { skip = ($0 == s) } skip { next } !NF { blank++; next } { while (blank) { print ""; blank-- } print }' "$f" >"$f.tmp" && mv "$f.tmp" "$f"
+    else
+      sed -i.bak "s/^\[$old\]\$/[nomimono]/" "$f" && rm -f "$f.bak"
+    fi
+  fi
+  if [[ -L $MONO_PACKAGES/$old && -d $MONO_PACKAGES/nomimono && ! -L $MONO_PACKAGES/nomimono ]]; then
+    rm -f "$MONO_PACKAGES/$old"
+  fi
+  return 0
+}
+mono_finish_rename
 
 # Output path of a buck2 target (sub-targets allowed). Non-root cells need the platform stated.
 buck2_out() {
@@ -170,9 +191,9 @@ buckconfig_get() {
 lua_bin() {
   local tc="$MONO_TOOLCHAINS/BUCK"
   [[ -f $tc ]] || return 0
-  if grep -qE '^# monomono:toolchain (lua|lua-5\.[13]|luajit)$' "$tc"; then
+  if grep -qE '^# nomimono:toolchain (lua|lua-5\.[13]|luajit)$' "$tc"; then
     local p; p=$(buck2_out "toolchains//:lua-build[lua]"); [[ -z $p ]] || printf '%s\n' "$MONO_ROOT/$p"
-  elif grep -q '^# monomono:toolchain lua-system$' "$tc"; then
+  elif grep -q '^# nomimono:toolchain lua-system$' "$tc"; then
     command -v lua || true
   else
     buckconfig_get lua bin || true
@@ -193,12 +214,12 @@ lua_host() { lua_host_cmd; printf '%s\n' "${HOST_CMD[0]-}"; }
 # lua_run <file> [args]: run a repo Lua file the way toolchains//:lua would, with the mono stdlib on the path.
 lua_run() {
   local file=$1; shift
-  local lib; lib=$(buck2_out "monomono//rules/lua:lib")
-  [[ -n $lib ]] || die "cannot build the mono stdlib (monomono//rules/lua:lib)"
+  local lib; lib=$(buck2_out "nomimono//rules/lua:lib")
+  [[ -n $lib ]] || die "cannot build the mono stdlib (nomimono//rules/lua:lib)"
   export LUA_PATH="$MONO_ROOT/scripts/lib/?.lua;$MONO_ROOT/scripts/lib/?/init.lua;$MONO_ROOT/$lib/lib/?.lua;$MONO_ROOT/$lib/lib/?/init.lua;${LUA_PATH:-;}"
   local bin host
   bin=$(lua_bin); lua_host_cmd
-  if [[ ${#HOST_CMD[@]} -gt 0 && -f $MONO_TOOLCHAINS/BUCK ]] && grep -q '^# monomono:toolchain lua-host$' "$MONO_TOOLCHAINS/BUCK"; then exec "${HOST_CMD[@]}" "$file" -- "$@"   # lua-host: the host wins, as for tests
+  if [[ ${#HOST_CMD[@]} -gt 0 && -f $MONO_TOOLCHAINS/BUCK ]] && grep -q '^# nomimono:toolchain lua-host$' "$MONO_TOOLCHAINS/BUCK"; then exec "${HOST_CMD[@]}" "$file" -- "$@"   # lua-host: the host wins, as for tests
   elif [[ -n $bin ]]; then exec "$bin" "$file" "$@"
   elif [[ ${#HOST_CMD[@]} -gt 0 ]]; then exec "${HOST_CMD[@]}" "$file" -- "$@"
   else die "toolchains//:lua is not declared (just toolchain add lua, lua-config, or lua-host)"; fi

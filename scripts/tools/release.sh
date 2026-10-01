@@ -10,6 +10,6 @@ echo "$v" >VERSION
 sed -i.bak -E "s/^version = \".*\"/version = \"$v\"/" mono.toml && rm -f mono.toml.bak
 git add VERSION mono.toml
 git commit -q -m "Release $v"
-git tag -a "v$v" -m "monomono $v"
+git tag -a "v$v" -m "nomimono $v"
 git push -q origin HEAD "v$v"
 echo "released v$v"

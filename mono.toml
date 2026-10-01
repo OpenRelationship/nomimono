@@ -1,12 +1,12 @@
-# monomono manifest. This repo consumes itself; path is the checkout.
+# nomimono manifest. This repo consumes itself; path is the checkout.
 
-[monomono]
+[nomimono]
 version = "0.4.3"
 mode = "self"
-repo = "https://github.com/shinyobjectz/monomono"
+repo = "https://github.com/OpenRelationship/nomimono"
 
 [repo]
-name = "monomono"
+name = "nomimono"
 
 [modules]
 context = "false"

@@ -1,5 +1,5 @@
 # lua-config: the interpreter named in the root configuration — [lua] bin = /path/to/lua in .buckconfig.local (an app may write it per machine)
-load("@monomono//rules/lua:toolchain.bzl", "lua_toolchain")
+load("@nomimono//rules/lua:toolchain.bzl", "lua_toolchain")
 lua_toolchain(
     name = "lua",
     interpreter_path = read_root_config("lua", "bin", "lua"),
